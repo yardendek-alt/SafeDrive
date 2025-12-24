@@ -22,11 +22,60 @@
       0%, 100% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
     }
+    @keyframes floatUp {
+      from { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+      to { 
+        opacity: 0;
+        transform: translateY(-100px) scale(1.5);
+      }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { 
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        transform: scale(1);
+      }
+      50% { 
+        box-shadow: 0 0 40px rgba(34, 197, 94, 0.8);
+        transform: scale(1.05);
+      }
+    }
+    @keyframes jump {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes unlock {
+      0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+      60% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    @keyframes negativeHit {
+      0% { transform: scale(1); filter: brightness(1); }
+      50% { transform: scale(0.95); filter: brightness(0.5); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
     .animate-shake {
       animation: shake 0.5s ease-in-out;
     }
     .animate-fadeIn {
       animation: fadeIn 0.3s ease-in;
+    }
+    .animate-floatUp {
+      animation: floatUp 1s ease-out forwards;
+    }
+    .animate-pulse-glow {
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+    .animate-jump {
+      animation: jump 0.3s ease-in-out;
+    }
+    .animate-unlock {
+      animation: unlock 0.5s ease-out forwards;
+    }
+    .animate-negativeHit {
+      animation: negativeHit 0.3s ease-in-out;
     }
     .gradient-bg {
       background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
@@ -47,7 +96,45 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect } = React;
+    const { useState, useEffect, useRef } = React;
+
+    // Sound effects
+    const playDingSound = () => {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime);
+      oscillator.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    };
+
+    const playBuzzSound = () => {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 150;
+      oscillator.type = 'sawtooth';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.4);
+    };
 
     function ControlToggle({ viewMode, setViewMode }) {
       return (
@@ -136,16 +223,17 @@
       );
     }
 
-    function SafetyScoreCard() {
-      const score = 92;
+    function SafetyScoreCard({ score, isDriving, floatingPoints }) {
       const maxScore = 100;
       const percentage = (score / maxScore) * 100;
       const circumference = 2 * Math.PI * 70;
       const offset = circumference - (percentage / 100) * circumference;
 
       return (
-        <div className="glass-effect rounded-3xl p-6 flex flex-col items-center card-glow">
-          <h2 className="text-lg font-bold text-slate-200 mb-5">Weekly Safety Score</h2>
+        <div className="glass-effect rounded-3xl p-6 flex flex-col items-center card-glow relative">
+          <h2 className="text-lg font-bold text-slate-200 mb-5">
+            {isDriving ? '🎮 Live Score' : 'Weekly Safety Score'}
+          </h2>
           <div className="relative w-44 h-44">
             <svg className="transform -rotate-90" width="176" height="176">
               <circle
@@ -182,30 +270,64 @@
               <span className="text-xl text-slate-400 font-semibold">/ {maxScore}</span>
             </div>
           </div>
+          {/* Floating points animations */}
+          {floatingPoints.map((point, index) => (
+            <div
+              key={point.id}
+              className="absolute animate-floatUp text-2xl font-bold text-green-400"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none'
+              }}
+            >
+              +{point.value}
+            </div>
+          ))}
         </div>
       );
     }
 
-    function StatsRow() {
+    function StatsRow({ streak, isDriving }) {
+      const glowIntensity = Math.min(streak / 7, 1); // Max glow at 7 days
+      
       return (
         <div className="grid grid-cols-2 gap-4">
           <div className="glass-effect rounded-2xl p-5 card-glow border border-slate-700/50">
             <div className="text-slate-400 text-xs mb-2 font-semibold uppercase tracking-wide">Hours Driven</div>
             <div className="text-3xl font-extrabold text-slate-100">12.5</div>
           </div>
-          <div className="glass-effect rounded-2xl p-5 card-glow border border-green-500/30">
-            <div className="text-slate-400 text-xs mb-2 font-semibold uppercase tracking-wide">Active Streaks</div>
-            <div className="text-3xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">7 days</div>
+          <div 
+            className={`glass-effect rounded-2xl p-5 border transition-all duration-300 ${
+              isDriving && streak > 0 ? 'animate-pulse-glow' : ''
+            }`}
+            style={{
+              borderColor: `rgba(34, 197, 94, ${0.3 + glowIntensity * 0.7})`,
+              boxShadow: `0 0 ${20 + glowIntensity * 30}px rgba(34, 197, 94, ${0.2 + glowIntensity * 0.5})`
+            }}
+          >
+            <div className="text-slate-400 text-xs mb-2 font-semibold uppercase tracking-wide flex items-center gap-1">
+              🔥 Streak
+            </div>
+            <div 
+              className="text-3xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent"
+              style={{
+                filter: `brightness(${1 + glowIntensity * 0.5})`
+              }}
+            >
+              {streak} {streak === 1 ? 'min' : 'mins'}
+            </div>
           </div>
         </div>
       );
     }
 
-    function GamificationSection() {
+    function GamificationSection({ unlockedBadges }) {
       const badges = [
-        { name: 'No-Text Streak', icon: '📱', earned: true },
-        { name: 'Safe Commuter', icon: '🚗', earned: true },
-        { name: 'Focus Master', icon: '🎯', earned: false }
+        { name: 'No-Text Streak', icon: '📱', id: 'notext' },
+        { name: 'Safe Commuter', icon: '🚗', id: 'commuter' },
+        { name: 'Focus Master', icon: '🎯', id: 'focus' }
       ];
 
       return (
@@ -215,95 +337,111 @@
             <span>Badges</span>
           </h2>
           <div className="grid grid-cols-3 gap-3" style={{ alignItems: 'stretch' }}>
-            {badges.map((badge, index) => (
-              <div
-                key={index}
-                className={`rounded-2xl transition-all relative ${
-                  badge.earned 
-                    ? 'bg-gradient-to-br from-green-500/20 to-emerald-500/20 border-2 border-green-400/50 shadow-lg' 
-                    : 'bg-slate-700/30 border-2 border-slate-600/50'
-                }`}
-                style={{
-                  height: '140px',
-                  padding: '16px',
-                  ...(badge.earned ? { boxShadow: '0 4px 15px rgba(34, 197, 94, 0.3)' } : {})
-                }}
-              >
-                <div 
-                  className={`text-5xl transition-all ${badge.earned ? 'scale-110' : 'grayscale opacity-40'}`}
-                  style={{ 
-                    position: 'absolute',
-                    top: '16px',
-                    left: '50%',
-                    transform: `translateX(-50%) ${badge.earned ? 'scale(1.1)' : 'scale(1)'}`,
-                    width: '100%',
-                    height: '64px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: 0
+            {badges.map((badge, index) => {
+              const earned = unlockedBadges.includes(badge.id);
+              const justUnlocked = unlockedBadges[unlockedBadges.length - 1] === badge.id;
+              
+              return (
+                <div
+                  key={index}
+                  className={`rounded-2xl transition-all relative ${
+                    earned
+                      ? 'bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-400/70 shadow-lg' 
+                      : 'bg-slate-700/30 border-2 border-slate-600/50'
+                  } ${justUnlocked ? 'animate-unlock' : ''}`}
+                  style={{
+                    height: '140px',
+                    padding: '16px',
+                    ...(earned ? { boxShadow: '0 4px 20px rgba(234, 179, 8, 0.4), 0 0 30px rgba(234, 179, 8, 0.2)' } : {})
                   }}
                 >
-                  {badge.icon}
+                  <div 
+                    className={`text-5xl transition-all ${earned ? 'scale-110' : 'grayscale opacity-40'}`}
+                    style={{ 
+                      position: 'absolute',
+                      top: '16px',
+                      left: '50%',
+                      transform: `translateX(-50%) ${earned ? 'scale(1.1)' : 'scale(1)'}`,
+                      width: '100%',
+                      height: '64px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: 0,
+                      filter: earned ? 'drop-shadow(0 0 10px rgba(234, 179, 8, 0.6))' : 'none'
+                    }}
+                  >
+                    {badge.icon}
+                  </div>
+                  <div 
+                    className={`text-xs font-bold text-center ${earned ? 'text-yellow-300' : 'text-slate-500'}`}
+                    style={{ 
+                      position: 'absolute',
+                      bottom: '16px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '100%',
+                      height: '36px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      lineHeight: '18px',
+                      margin: 0
+                    }}
+                  >
+                    <div style={{ height: '18px', lineHeight: '18px' }}>{badge.name.split(' ')[0]}</div>
+                    <div style={{ height: '18px', lineHeight: '18px' }}>{badge.name.split(' ')[1]}</div>
+                  </div>
                 </div>
-                <div 
-                  className={`text-xs font-bold text-center ${badge.earned ? 'text-green-300' : 'text-slate-500'}`}
-                  style={{ 
-                    position: 'absolute',
-                    bottom: '16px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '100%',
-                    height: '36px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    lineHeight: '18px',
-                    margin: 0
-                  }}
-                >
-                  <div style={{ height: '18px', lineHeight: '18px' }}>{badge.name.split(' ')[0]}</div>
-                  <div style={{ height: '18px', lineHeight: '18px' }}>{badge.name.split(' ')[1]}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
     }
 
-    function LeaderboardPreview() {
-      const topUsers = [
-        { rank: 1, name: 'Alex M.', score: 98 },
-        { rank: 2, name: 'Sarah K.', score: 96 },
-        { rank: 3, name: 'Mike T.', score: 95 }
-      ];
+    function LeaderboardPreview({ currentScore, animatingRanks }) {
+      const [topUsers, setTopUsers] = useState([
+        { rank: 1, name: 'Alex M.', score: 98, avatar: '😎' },
+        { rank: 2, name: 'Sarah K.', score: 96, avatar: '🌟' },
+        { rank: 3, name: 'Mike T.', score: 95, avatar: '🚀' }
+      ]);
 
       return (
         <div className="glass-effect rounded-3xl p-6 card-glow border border-slate-700/50">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-extrabold text-slate-200">🏅 Leaderboard</h2>
             <div className="text-sm font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent px-3 py-1 rounded-full glass-effect border border-green-500/30">
-              Rank #5
+              Rank #{currentScore >= 98 ? '1' : currentScore >= 96 ? '2' : currentScore >= 95 ? '3' : '5'}
             </div>
           </div>
           <div className="space-y-2">
-            {topUsers.map((user) => (
-              <div key={user.rank} className="flex items-center justify-between glass-effect rounded-xl p-3 border border-slate-700/50 hover:border-green-500/30 transition-all">
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold ${
-                    user.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-slate-900' :
-                    user.rank === 2 ? 'bg-gradient-to-br from-slate-400 to-slate-500 text-white' :
-                    'bg-gradient-to-br from-amber-600 to-amber-700 text-white'
-                  } shadow-lg`}>
-                    #{user.rank}
+            {topUsers.map((user) => {
+              const isJumping = animatingRanks.includes(user.rank);
+              
+              return (
+                <div 
+                  key={user.rank} 
+                  className={`flex items-center justify-between glass-effect rounded-xl p-3 border border-slate-700/50 hover:border-green-500/30 transition-all ${
+                    isJumping ? 'animate-jump' : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold ${
+                      user.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-orange-400 text-slate-900' :
+                      user.rank === 2 ? 'bg-gradient-to-br from-slate-400 to-slate-500 text-white' :
+                      'bg-gradient-to-br from-amber-600 to-amber-700 text-white'
+                    } shadow-lg`}>
+                      #{user.rank}
+                    </div>
+                    <span className="text-2xl">{user.avatar}</span>
+                    <span className="text-slate-200 font-bold">{user.name}</span>
                   </div>
-                  <span className="text-slate-200 font-bold">{user.name}</span>
+                  <span className="text-green-400 font-extrabold text-lg">{user.score}</span>
                 </div>
-                <span className="text-green-400 font-extrabold text-lg">{user.score}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
@@ -338,15 +476,48 @@
       );
     }
 
-    function FullGamificationView({ onStartDriving, isDriving, onStopDriving }) {
+    function DrivingSessionProgress({ progress, hasNudge }) {
+      return (
+        <div className="glass-effect rounded-3xl p-6 card-glow border border-slate-700/50">
+          <h2 className="text-lg font-extrabold text-slate-200 mb-4 flex items-center gap-2">
+            <span>🛣️</span>
+            <span>Driving Session</span>
+          </h2>
+          <div className="relative w-full h-8 bg-slate-700/50 rounded-full overflow-hidden border-2 border-slate-600">
+            <div 
+              className={`absolute inset-y-0 left-0 transition-all duration-500 ${
+                hasNudge 
+                  ? 'bg-gradient-to-r from-red-500 to-rose-500 animate-negativeHit' 
+                  : 'bg-gradient-to-r from-green-500 to-emerald-500'
+              }`}
+              style={{ 
+                width: `${progress}%`,
+                boxShadow: hasNudge 
+                  ? '0 0 20px rgba(239, 68, 68, 0.6)' 
+                  : '0 0 20px rgba(34, 197, 94, 0.6)'
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
+              {Math.round(progress)}%
+            </div>
+          </div>
+          <p className="text-slate-400 text-xs mt-2 text-center">
+            {hasNudge ? '⚠️ Phone use detected!' : '✨ Keep your eyes on the road!'}
+          </p>
+        </div>
+      );
+    }
+
+    function FullGamificationView({ onStartDriving, isDriving, onStopDriving, score, floatingPoints, streak, unlockedBadges, animatingRanks, sessionProgress, hasRecentNudge }) {
       return (
         <div className="h-full bg-slate-900 flex flex-col overflow-y-auto">
           <Header />
           <div className="flex-1 px-6 py-4 space-y-6">
-            <SafetyScoreCard />
-            <StatsRow />
-            <GamificationSection />
-            <LeaderboardPreview />
+            <SafetyScoreCard score={score} isDriving={isDriving} floatingPoints={floatingPoints} />
+            <StatsRow streak={streak} isDriving={isDriving} />
+            {isDriving && <DrivingSessionProgress progress={sessionProgress} hasNudge={hasRecentNudge} />}
+            <GamificationSection unlockedBadges={unlockedBadges} />
+            <LeaderboardPreview currentScore={score} animatingRanks={animatingRanks} />
             <StartDrivingButton 
               onStartDriving={onStartDriving} 
               isDriving={isDriving}
@@ -376,6 +547,13 @@
       const [phoneShake, setPhoneShake] = useState(false);
       const [startTime, setStartTime] = useState(null);
       const [tripDurationSeconds, setTripDurationSeconds] = useState(0);
+      const [score, setScore] = useState(92);
+      const [floatingPoints, setFloatingPoints] = useState([]);
+      const [streak, setStreak] = useState(0);
+      const [unlockedBadges, setUnlockedBadges] = useState(['notext', 'commuter']);
+      const [animatingRanks, setAnimatingRanks] = useState([]);
+      const [sessionProgress, setSessionProgress] = useState(0);
+      const [hasRecentNudge, setHasRecentNudge] = useState(false);
       const [sessionData, setSessionData] = useState({
         tripDuration: 0,
         nudgeActivations: 0,
@@ -387,7 +565,63 @@
         forbiddenAppTime: 0
       });
 
-      // Timer effect to update trip duration while driving
+      const pointsIdRef = useRef(0);
+
+      // Live score counter while driving in safe mode
+      useEffect(() => {
+        let interval = null;
+        if (isDriving) {
+          interval = setInterval(() => {
+            const points = 5;
+            setScore(prev => {
+              const newScore = Math.min(prev + points, 100);
+              
+              // Check for milestones and unlock badges
+              if (newScore >= 95 && !unlockedBadges.includes('focus')) {
+                setUnlockedBadges(prev => [...prev, 'focus']);
+                playDingSound();
+              }
+              
+              // Animate rank jump at score milestones
+              if (newScore === 95 || newScore === 96 || newScore === 98) {
+                setAnimatingRanks([1]);
+                setTimeout(() => setAnimatingRanks([]), 300);
+              }
+              
+              return newScore;
+            });
+            
+            // Add floating point animation
+            const id = pointsIdRef.current++;
+            setFloatingPoints(prev => [...prev, { id, value: points }]);
+            setTimeout(() => {
+              setFloatingPoints(prev => prev.filter(p => p.id !== id));
+            }, 1000);
+            
+            playDingSound();
+          }, 3000); // Add points every 3 seconds
+        } else {
+          if (interval) clearInterval(interval);
+        }
+        return () => {
+          if (interval) clearInterval(interval);
+        };
+      }, [isDriving, unlockedBadges]);
+
+      // Streak counter - increases every minute of safe driving
+      useEffect(() => {
+        let interval = null;
+        if (isDriving) {
+          interval = setInterval(() => {
+            setStreak(prev => prev + 1);
+          }, 60000); // Every minute
+        }
+        return () => {
+          if (interval) clearInterval(interval);
+        };
+      }, [isDriving]);
+
+      // Trip duration timer
       useEffect(() => {
         let interval = null;
         if (isDriving && startTime) {
@@ -399,6 +633,10 @@
               ...prev,
               tripDuration: minutes
             }));
+            
+            // Update session progress (simulate 5-minute trip)
+            const progress = Math.min((elapsed / 300) * 100, 100);
+            setSessionProgress(progress);
           }, 1000);
         } else {
           if (interval) clearInterval(interval);
@@ -409,22 +647,7 @@
       }, [isDriving, startTime]);
 
       const triggerVibration = () => {
-        // Play beep sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-        
-        oscillator.frequency.value = 800;
-        oscillator.type = 'sine';
-        
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-        
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.3);
+        playBuzzSound();
 
         // Trigger phone shake
         setPhoneShake(true);
@@ -434,6 +657,15 @@
 
         // Show alert
         setShowAlert(true);
+        
+        // Mark recent nudge for progress bar
+        setHasRecentNudge(true);
+        setTimeout(() => {
+          setHasRecentNudge(false);
+        }, 3000);
+        
+        // Deduct points with negative hit animation
+        setScore(prev => Math.max(prev - 10, 0));
         
         // Update session data
         setSessionData(prev => ({
@@ -462,6 +694,8 @@
         setStartTime(now);
         setIsDriving(true);
         setTripDurationSeconds(0);
+        setStreak(0);
+        setSessionProgress(0);
         // Reset session data when starting a new drive
         setSessionData({
           tripDuration: 0,
@@ -472,7 +706,7 @@
 
       const stopDriving = () => {
         setIsDriving(false);
-        // Save the current session data before stopping (save total seconds)
+        // Save the current session data before stopping
         setSavedSessionData({
           tripDurationSeconds: tripDurationSeconds,
           nudgeActivations: sessionData.nudgeActivations,
@@ -495,12 +729,26 @@
               onStartDriving={startDriving} 
               isDriving={isDriving}
               onStopDriving={stopDriving}
+              score={score}
+              floatingPoints={floatingPoints}
+              streak={streak}
+              unlockedBadges={unlockedBadges}
+              animatingRanks={animatingRanks}
+              sessionProgress={sessionProgress}
+              hasRecentNudge={hasRecentNudge}
             />;
           default:
             return <FullGamificationView 
               onStartDriving={startDriving} 
               isDriving={isDriving}
               onStopDriving={stopDriving}
+              score={score}
+              floatingPoints={floatingPoints}
+              streak={streak}
+              unlockedBadges={unlockedBadges}
+              animatingRanks={animatingRanks}
+              sessionProgress={sessionProgress}
+              hasRecentNudge={hasRecentNudge}
             />;
         }
       };
