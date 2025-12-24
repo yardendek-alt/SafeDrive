@@ -208,16 +208,39 @@
       );
     }
 
-    function Header() {
+    function Header({ currentPage, onNavigate, coins }) {
       return (
-        <div className="flex items-center justify-between px-6 py-5 glass-effect border-b border-slate-700/50">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-            DriveSafe
-          </h1>
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-600 flex items-center justify-center shadow-lg border-2 border-slate-500">
-            <svg className="w-6 h-6 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
+        <div className="glass-effect border-b border-slate-700/50">
+          <div className="flex items-center justify-between px-6 py-5">
+            <h1 className="text-3xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+              DriveSafe
+            </h1>
+            <div className="flex items-center gap-2 glass-effect px-3 py-1.5 rounded-full border border-yellow-500/30">
+              <span className="text-yellow-400 text-lg">🪙</span>
+              <span className="text-yellow-400 font-extrabold">{coins}</span>
+            </div>
+          </div>
+          <div className="flex gap-2 px-6 pb-3">
+            <button
+              onClick={() => onNavigate('dashboard')}
+              className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                currentPage === 'dashboard'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                  : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              📊 Dashboard
+            </button>
+            <button
+              onClick={() => onNavigate('shop')}
+              className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+                currentPage === 'shop'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                  : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              🎨 Shop
+            </button>
           </div>
         </div>
       );
@@ -471,16 +494,10 @@
 
       return (
         <div className="glass-effect rounded-3xl p-6 card-glow border border-slate-700/50">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-lg font-extrabold text-slate-200 flex items-center gap-2">
-              <span>🎨</span>
-              <span>Avatar Shop</span>
-            </h2>
-            <div className="flex items-center gap-2 glass-effect px-3 py-1.5 rounded-full border border-yellow-500/30">
-              <span className="text-yellow-400 text-lg">🪙</span>
-              <span className="text-yellow-400 font-extrabold">{coins}</span>
-            </div>
-          </div>
+          <h2 className="text-lg font-extrabold text-slate-200 flex items-center gap-2 mb-5">
+            <span>🎨</span>
+            <span>Avatar Skins</span>
+          </h2>
           <div className="grid grid-cols-4 gap-3">
             {skins.map((skin) => {
               const owned = ownedSkins.includes(skin.id);
@@ -625,12 +642,42 @@
       );
     }
 
-    function FullGamificationView({ onStartDriving, isDriving, onStopDriving, score, floatingPoints, streak, unlockedBadges, animatingRanks, sessionProgress, hasRecentNudge, tripDuration, setTripDuration, coins, ownedSkins, selectedAvatar, onPurchaseSkin, onSelectAvatar, getAvatarEmoji, currentRank }) {
+    function FullGamificationView({ onStartDriving, isDriving, onStopDriving, score, floatingPoints, streak, unlockedBadges, animatingRanks, sessionProgress, hasRecentNudge, tripDuration, setTripDuration, coins, ownedSkins, selectedAvatar, onPurchaseSkin, onSelectAvatar, getAvatarEmoji, currentRank, currentPage, onNavigate }) {
       return (
         <div className="h-full bg-slate-900 flex flex-col overflow-y-auto">
-          <Header />
+          <Header currentPage={currentPage} onNavigate={onNavigate} coins={coins} />
           <div className="flex-1 px-6 py-4 space-y-6">
-            {isDriving ? (
+            {currentPage === 'shop' ? (
+              // Shop Page
+              <>
+                <div className="text-center py-6">
+                  <h2 className="text-3xl font-extrabold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent mb-2">
+                    Avatar Shop
+                  </h2>
+                  <p className="text-slate-400">Unlock exclusive skins by ranking up!</p>
+                </div>
+                <AvatarShop 
+                  coins={coins}
+                  ownedSkins={ownedSkins}
+                  selectedAvatar={selectedAvatar}
+                  onPurchase={onPurchaseSkin}
+                  onSelect={onSelectAvatar}
+                  currentRank={currentRank}
+                />
+                <div className="glass-effect rounded-2xl p-5 border border-slate-700/50">
+                  <h3 className="text-lg font-bold text-slate-200 mb-3">Current Avatar</h3>
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="text-6xl">{getAvatarEmoji(selectedAvatar)}</div>
+                    <div>
+                      <div className="text-slate-300 font-bold mb-1">Your Rank</div>
+                      <div className="text-3xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                        #{currentRank}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : isDriving ? (
               // Driving Mode: Minimalist UI
               <>
                 <div className="flex items-center justify-center h-32">
@@ -652,20 +699,12 @@
                 />
               </>
             ) : (
-              // Pre-Drive Mode: Full Dashboard
+              // Dashboard Page
               <>
                 <SafetyScoreCard score={score} isDriving={isDriving} floatingPoints={floatingPoints} />
                 <StatsRow streak={streak} isDriving={isDriving} />
                 <GamificationSection unlockedBadges={unlockedBadges} />
                 <LeaderboardPreview currentScore={score} animatingRanks={animatingRanks} userAvatar={getAvatarEmoji(selectedAvatar)} currentRank={currentRank} />
-                <AvatarShop 
-                  coins={coins}
-                  ownedSkins={ownedSkins}
-                  selectedAvatar={selectedAvatar}
-                  onPurchase={onPurchaseSkin}
-                  onSelect={onSelectAvatar}
-                  currentRank={currentRank}
-                />
                 <StartDrivingButton 
                   onStartDriving={onStartDriving} 
                   isDriving={isDriving}
@@ -711,6 +750,7 @@
       const [sessionProgress, setSessionProgress] = useState(0);
       const [hasRecentNudge, setHasRecentNudge] = useState(false);
       const [currentRank, setCurrentRank] = useState(5);
+      const [currentPage, setCurrentPage] = useState('dashboard');
       const [sessionData, setSessionData] = useState({
         tripDuration: 0,
         nudgeActivations: 0,
@@ -937,6 +977,8 @@
               onSelectAvatar={handleSelectAvatar}
               getAvatarEmoji={getAvatarEmoji}
               currentRank={currentRank}
+              currentPage={currentPage}
+              onNavigate={setCurrentPage}
             />;
           default:
             return <FullGamificationView 
@@ -959,6 +1001,8 @@
               onSelectAvatar={handleSelectAvatar}
               getAvatarEmoji={getAvatarEmoji}
               currentRank={currentRank}
+              currentPage={currentPage}
+              onNavigate={setCurrentPage}
             />;
         }
       };
