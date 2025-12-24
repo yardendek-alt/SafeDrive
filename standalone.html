@@ -547,6 +547,7 @@
       const [phoneShake, setPhoneShake] = useState(false);
       const [startTime, setStartTime] = useState(null);
       const [tripDurationSeconds, setTripDurationSeconds] = useState(0);
+      const [tripDuration, setTripDuration] = useState(5);
       const [score, setScore] = useState(92);
       const [floatingPoints, setFloatingPoints] = useState([]);
       const [streak, setStreak] = useState(0);
@@ -580,10 +581,7 @@
               if (newScore >= 95 && !unlockedBadges.includes('focus')) {
                 setUnlockedBadges(prev => [...prev, 'focus']);
                 playDingSound();
-              }
-              
-              // Animate rank jump at score milestones
-              if (newScore === 95 || newScore === 96 || newScore === 98) {
+                // Only animate rank on badge unlock
                 setAnimatingRanks([1]);
                 setTimeout(() => setAnimatingRanks([]), 300);
               }
@@ -634,8 +632,8 @@
               tripDuration: minutes
             }));
             
-            // Update session progress (simulate 5-minute trip)
-            const progress = Math.min((elapsed / 300) * 100, 100);
+            // Update session progress based on selected trip duration
+            const progress = Math.min((elapsed / (tripDuration * 60)) * 100, 100);
             setSessionProgress(progress);
           }, 1000);
         } else {
@@ -755,6 +753,26 @@
 
       return (
         <div className="min-h-screen gradient-bg flex flex-col items-center py-8 px-4">
+          <div className="w-full max-w-md mb-4">
+            <label className="block text-slate-200 text-sm font-bold mb-2 text-center">
+              Trip Duration (minutes)
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="30"
+              value={tripDuration}
+              onChange={(e) => setTripDuration(Number(e.target.value))}
+              disabled={isDriving}
+              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500"
+            />
+            <div className="text-center mt-2">
+              <span className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                {tripDuration}
+              </span>
+              <span className="text-slate-300 text-sm ml-2">minutes</span>
+            </div>
+          </div>
           <ControlToggle viewMode={viewMode} setViewMode={setViewMode} />
           
           <div className="mt-8">
