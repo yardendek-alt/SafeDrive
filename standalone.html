@@ -447,7 +447,7 @@
       );
     }
 
-    function StartDrivingButton({ onStartDriving, isDriving, onStopDriving }) {
+    function StartDrivingButton({ onStartDriving, isDriving, onStopDriving, tripDuration, setTripDuration }) {
       if (isDriving) {
         return (
           <button
@@ -463,16 +463,37 @@
         );
       }
       return (
-        <button
-          onClick={(e) => {
-            e.stopPropagation(); // Prevent triggering screen click
-            onStartDriving();
-          }}
-          className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-extrabold py-5 px-6 rounded-2xl text-lg transition-all shadow-2xl active:scale-95 transform hover:scale-105"
-          style={{ boxShadow: '0 10px 30px rgba(34, 197, 94, 0.4)' }}
-        >
-          🚗 START DRIVING
-        </button>
+        <div className="space-y-4">
+          <div className="glass-effect rounded-2xl p-5 border border-slate-700/50">
+            <label className="block text-slate-200 text-sm font-bold mb-3 text-center">
+              🕐 Set Trip Duration
+            </label>
+            <input
+              type="range"
+              min="1"
+              max="30"
+              value={tripDuration}
+              onChange={(e) => setTripDuration(Number(e.target.value))}
+              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500"
+            />
+            <div className="text-center mt-3">
+              <span className="text-4xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                {tripDuration}
+              </span>
+              <span className="text-slate-300 text-lg ml-2">minutes</span>
+            </div>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent triggering screen click
+              onStartDriving();
+            }}
+            className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-extrabold py-5 px-6 rounded-2xl text-lg transition-all shadow-2xl active:scale-95 transform hover:scale-105"
+            style={{ boxShadow: '0 10px 30px rgba(34, 197, 94, 0.4)' }}
+          >
+            🚗 START DRIVING
+          </button>
+        </div>
       );
     }
 
@@ -508,21 +529,48 @@
       );
     }
 
-    function FullGamificationView({ onStartDriving, isDriving, onStopDriving, score, floatingPoints, streak, unlockedBadges, animatingRanks, sessionProgress, hasRecentNudge }) {
+    function FullGamificationView({ onStartDriving, isDriving, onStopDriving, score, floatingPoints, streak, unlockedBadges, animatingRanks, sessionProgress, hasRecentNudge, tripDuration, setTripDuration }) {
       return (
         <div className="h-full bg-slate-900 flex flex-col overflow-y-auto">
           <Header />
           <div className="flex-1 px-6 py-4 space-y-6">
-            <SafetyScoreCard score={score} isDriving={isDriving} floatingPoints={floatingPoints} />
-            <StatsRow streak={streak} isDriving={isDriving} />
-            {isDriving && <DrivingSessionProgress progress={sessionProgress} hasNudge={hasRecentNudge} />}
-            <GamificationSection unlockedBadges={unlockedBadges} />
-            <LeaderboardPreview currentScore={score} animatingRanks={animatingRanks} />
-            <StartDrivingButton 
-              onStartDriving={onStartDriving} 
-              isDriving={isDriving}
-              onStopDriving={onStopDriving}
-            />
+            {isDriving ? (
+              // Driving Mode: Minimalist UI
+              <>
+                <div className="flex items-center justify-center h-32">
+                  <div className="text-center">
+                    <div className="text-6xl mb-2">🚗</div>
+                    <h2 className="text-2xl font-bold text-slate-200">Driving Mode</h2>
+                    <p className="text-slate-400 text-sm mt-1">Stay focused on the road</p>
+                  </div>
+                </div>
+                <SafetyScoreCard score={score} isDriving={isDriving} floatingPoints={floatingPoints} />
+                <StatsRow streak={streak} isDriving={isDriving} />
+                <DrivingSessionProgress progress={sessionProgress} hasNudge={hasRecentNudge} />
+                <StartDrivingButton 
+                  onStartDriving={onStartDriving} 
+                  isDriving={isDriving}
+                  onStopDriving={onStopDriving}
+                  tripDuration={tripDuration}
+                  setTripDuration={setTripDuration}
+                />
+              </>
+            ) : (
+              // Pre-Drive Mode: Full Dashboard
+              <>
+                <SafetyScoreCard score={score} isDriving={isDriving} floatingPoints={floatingPoints} />
+                <StatsRow streak={streak} isDriving={isDriving} />
+                <GamificationSection unlockedBadges={unlockedBadges} />
+                <LeaderboardPreview currentScore={score} animatingRanks={animatingRanks} />
+                <StartDrivingButton 
+                  onStartDriving={onStartDriving} 
+                  isDriving={isDriving}
+                  onStopDriving={onStopDriving}
+                  tripDuration={tripDuration}
+                  setTripDuration={setTripDuration}
+                />
+              </>
+            )}
           </div>
         </div>
       );
@@ -734,6 +782,8 @@
               animatingRanks={animatingRanks}
               sessionProgress={sessionProgress}
               hasRecentNudge={hasRecentNudge}
+              tripDuration={tripDuration}
+              setTripDuration={setTripDuration}
             />;
           default:
             return <FullGamificationView 
@@ -747,32 +797,14 @@
               animatingRanks={animatingRanks}
               sessionProgress={sessionProgress}
               hasRecentNudge={hasRecentNudge}
+              tripDuration={tripDuration}
+              setTripDuration={setTripDuration}
             />;
         }
       };
 
       return (
         <div className="min-h-screen gradient-bg flex flex-col items-center py-8 px-4">
-          <div className="w-full max-w-md mb-4">
-            <label className="block text-slate-200 text-sm font-bold mb-2 text-center">
-              Trip Duration (minutes)
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="30"
-              value={tripDuration}
-              onChange={(e) => setTripDuration(Number(e.target.value))}
-              disabled={isDriving}
-              className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-green-500"
-            />
-            <div className="text-center mt-2">
-              <span className="text-3xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
-                {tripDuration}
-              </span>
-              <span className="text-slate-300 text-sm ml-2">minutes</span>
-            </div>
-          </div>
           <ControlToggle viewMode={viewMode} setViewMode={setViewMode} />
           
           <div className="mt-8">
