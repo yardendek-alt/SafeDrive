@@ -8,7 +8,9 @@ DriveSafe is a research-based mobile application designed to combat phone-induce
 
 ## 📱 Interactive Demo
 
-This repository contains an interactive demo showcasing the DriveSafe research approach. Open [standalone.html](standalone.html) in your browser to experience the different research modes:
+### 🌐 [Click here to try the Live Demo!](https://yardendek-alt.github.io/SafeDrive/standalone.html)
+
+This repository contains an interactive demo showcasing the DriveSafe research approach. Open the link above or [standalone.html](standalone.html) in your browser to experience the different research modes:
 
 - **Control Mode**: Monitoring active only (baseline condition)
 - **Nudge Only**: Status display with simulation button
