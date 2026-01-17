@@ -56,6 +56,28 @@
       50% { transform: scale(0.95); filter: brightness(0.5); }
       100% { transform: scale(1); filter: brightness(1); }
     }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes confetti {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(-200px) rotate(720deg); opacity: 0; }
+    }
+    @keyframes rankUp {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); filter: brightness(1.5); }
+      100% { transform: scale(1); }
+    }
+    .animate-slideUp {
+      animation: slideUp 0.3s ease-out;
+    }
+    .animate-confetti {
+      animation: confetti 1s ease-out forwards;
+    }
+    .animate-rankUp {
+      animation: rankUp 0.5s ease-out;
+    }
     .animate-shake {
       animation: shake 0.5s ease-in-out;
     }
@@ -90,6 +112,32 @@
     .card-glow {
       box-shadow: 0 4px 20px rgba(34, 197, 94, 0.2), 0 0 0 1px rgba(34, 197, 94, 0.1);
     }
+    /* Light theme styles */
+    .light-theme {
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%) !important;
+    }
+    .light-theme .glass-effect {
+      background: rgba(255, 255, 255, 0.8) !important;
+      border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    }
+    .light-theme .text-slate-100,
+    .light-theme .text-slate-200 {
+      color: #1e293b !important;
+    }
+    .light-theme .text-slate-300,
+    .light-theme .text-slate-400 {
+      color: #475569 !important;
+    }
+    .light-theme .bg-slate-700,
+    .light-theme .bg-slate-700\/50 {
+      background: rgba(203, 213, 225, 0.5) !important;
+    }
+    .light-theme .border-slate-700\/50 {
+      border-color: rgba(148, 163, 184, 0.3) !important;
+    }
+    .light-theme .bg-slate-900 {
+      background: #f1f5f9 !important;
+    }
   </style>
 </head>
 <body>
@@ -97,6 +145,30 @@
 
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
+
+    // Text-to-Speech for voice alerts
+    const speakAlert = (message) => {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(message);
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        utterance.volume = 1.0;
+        utterance.lang = 'en-US';
+        window.speechSynthesis.speak(utterance);
+      }
+    };
+
+    const alertMessages = [
+      "Be careful! Eyes on the road!",
+      "Stay focused! Put the phone down!",
+      "Warning! Keep your eyes on the road!",
+      "Danger! Don't use your phone while driving!",
+      "Stop! Your safety comes first!"
+    ];
+
+    const getRandomAlertMessage = () => {
+      return alertMessages[Math.floor(Math.random() * alertMessages.length)];
+    };
 
     // Sound effects
     const playDingSound = () => {
@@ -136,21 +208,53 @@
       oscillator.stop(audioContext.currentTime + 0.4);
     };
 
-    function ControlToggle({ viewMode, setViewMode }) {
+    function ControlToggle({ viewMode, setViewMode, alertMode, setAlertMode }) {
       return (
-        <div className="w-full max-w-md mb-6">
-          <label className="block text-slate-200 text-sm font-bold mb-3 text-center">
-            Research Mode
-          </label>
-          <select
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value)}
-            className="w-full glass-effect text-slate-100 border-2 border-slate-600 rounded-xl px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all shadow-lg hover:border-green-500"
-          >
-            <option value="control">Control: Monitoring Active Only</option>
-            <option value="nudge">Nudge Only: Status + Simulation Button</option>
-            <option value="full">Full Gamification: Complete UI</option>
-          </select>
+        <div className="w-full max-w-md mb-6 space-y-4">
+          <div>
+            <label className="block text-slate-200 text-sm font-bold mb-3 text-center">
+              Research Mode
+            </label>
+            <select
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value)}
+              className="w-full glass-effect text-slate-100 border-2 border-slate-600 rounded-xl px-4 py-3 font-semibold focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-400 transition-all shadow-lg hover:border-green-500"
+            >
+              <option value="control">Control: Monitoring Active Only</option>
+              <option value="nudge">Nudge Only: Status + Simulation Button</option>
+              <option value="full">Full Gamification: Complete UI</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-slate-200 text-sm font-bold mb-3 text-center">
+              🔔 Alert Type
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAlertMode('vibration')}
+                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                  alertMode === 'vibration'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                    : 'glass-effect text-slate-400 border-2 border-slate-600 hover:border-green-500'
+                }`}
+              >
+                📳 Vibration
+              </button>
+              <button
+                onClick={() => setAlertMode('sound')}
+                className={`flex-1 py-3 px-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${
+                  alertMode === 'sound'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                    : 'glass-effect text-slate-400 border-2 border-slate-600 hover:border-green-500'
+                }`}
+              >
+                🔊 Voice Alert
+              </button>
+            </div>
+            <p className="text-slate-400 text-xs text-center mt-2">
+              {alertMode === 'sound' ? '🗣️ Voice will say "Be careful!" when you touch the phone' : '📳 Phone will vibrate and buzz'}
+            </p>
+          </div>
         </div>
       );
     }
@@ -208,32 +312,61 @@
       );
     }
 
-    function Header({ currentPage, onNavigate, coins }) {
+    function Header({ currentPage, onNavigate, coins, theme, setTheme }) {
       return (
         <div className="glass-effect border-b border-slate-700/50">
           <div className="flex items-center justify-between px-6 py-5">
             <h1 className="text-3xl font-extrabold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
               DriveSafe
             </h1>
-            <div className="flex items-center gap-2 glass-effect px-3 py-1.5 rounded-full border border-yellow-500/30">
-              <span className="text-yellow-400 text-lg">🪙</span>
-              <span className="text-yellow-400 font-extrabold">{coins}</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-9 h-9 rounded-full glass-effect flex items-center justify-center text-lg border border-slate-600/50 hover:border-green-500/50 transition-all"
+                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {theme === 'dark' ? '☀️' : '🌙'}
+              </button>
+              <div className="flex items-center gap-2 glass-effect px-3 py-1.5 rounded-full border border-yellow-500/30">
+                <span className="text-yellow-400 text-lg">🪙</span>
+                <span className="text-yellow-400 font-extrabold">{coins}</span>
+              </div>
             </div>
           </div>
-          <div className="flex gap-2 px-6 pb-3">
+          <div className="flex gap-1 px-4 pb-3">
             <button
               onClick={() => onNavigate('dashboard')}
-              className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+              className={`flex-1 py-2 px-2 rounded-lg font-bold text-sm transition-all ${
                 currentPage === 'dashboard'
                   ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
                   : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'
               }`}
             >
-              📊 Dashboard
+              📊 Home
+            </button>
+            <button
+              onClick={() => onNavigate('history')}
+              className={`flex-1 py-2 px-2 rounded-lg font-bold text-sm transition-all ${
+                currentPage === 'history'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                  : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              🕐 History
+            </button>
+            <button
+              onClick={() => onNavigate('social')}
+              className={`flex-1 py-2 px-2 rounded-lg font-bold text-sm transition-all ${
+                currentPage === 'social'
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                  : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              👥 Social
             </button>
             <button
               onClick={() => onNavigate('shop')}
-              className={`flex-1 py-2 px-4 rounded-lg font-bold transition-all ${
+              className={`flex-1 py-2 px-2 rounded-lg font-bold text-sm transition-all ${
                 currentPage === 'shop'
                   ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
                   : 'bg-slate-700/50 text-slate-400 hover:text-slate-200'
@@ -560,6 +693,339 @@
       );
     }
 
+    function TripHistoryPage({ tripHistory, totalStats }) {
+      const formatDate = (timestamp) => {
+        const date = new Date(timestamp);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      };
+      
+      const formatDuration = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${String(secs).padStart(2, '0')}`;
+      };
+
+      return (
+        <div className="space-y-4">
+          {/* Summary Stats */}
+          <div className="glass-effect rounded-3xl p-5 card-glow border border-slate-700/50">
+            <h2 className="text-lg font-extrabold text-slate-200 mb-4 flex items-center gap-2">
+              <span>📈</span> Your Stats
+            </h2>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-effect rounded-xl p-3 text-center border border-slate-700/50">
+                <div className="text-2xl font-extrabold text-green-400">{totalStats.totalTrips}</div>
+                <div className="text-xs text-slate-400 font-semibold">Total Trips</div>
+              </div>
+              <div className="glass-effect rounded-xl p-3 text-center border border-slate-700/50">
+                <div className="text-2xl font-extrabold text-blue-400">{formatDuration(totalStats.totalDuration)}</div>
+                <div className="text-xs text-slate-400 font-semibold">Total Time</div>
+              </div>
+              <div className="glass-effect rounded-xl p-3 text-center border border-slate-700/50">
+                <div className="text-2xl font-extrabold text-yellow-400">{totalStats.bestScore}</div>
+                <div className="text-xs text-slate-400 font-semibold">Best Score</div>
+              </div>
+              <div className="glass-effect rounded-xl p-3 text-center border border-slate-700/50">
+                <div className="text-2xl font-extrabold text-purple-400">{totalStats.totalCoins}</div>
+                <div className="text-xs text-slate-400 font-semibold">Coins Earned</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Trip List */}
+          <div className="glass-effect rounded-3xl p-5 card-glow border border-slate-700/50">
+            <h2 className="text-lg font-extrabold text-slate-200 mb-4 flex items-center gap-2">
+              <span>🕐</span> Recent Trips
+            </h2>
+            {tripHistory.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-4xl mb-3">🚗</div>
+                <p className="text-slate-400">No trips yet. Start driving to log your first trip!</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {tripHistory.slice().reverse().map((trip, index) => (
+                  <div key={trip.id} className="glass-effect rounded-xl p-3 border border-slate-700/50 hover:border-green-500/30 transition-all">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-slate-300 text-sm font-semibold">{formatDate(trip.timestamp)}</span>
+                      <span className={`text-sm font-bold px-2 py-0.5 rounded-full ${
+                        trip.score >= 95 ? 'bg-green-500/20 text-green-400' :
+                        trip.score >= 80 ? 'bg-yellow-500/20 text-yellow-400' :
+                        'bg-red-500/20 text-red-400'
+                      }`}>
+                        Score: {trip.score}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                      <span>⏱️ {formatDuration(trip.duration)}</span>
+                      <span>⚠️ {trip.nudges} nudges</span>
+                      <span>🪙 +{trip.coinsEarned}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    function SocialPage({ score, currentRank, onShare, friends, onChallenge, challenges, onAcceptChallenge, getAvatarEmoji, selectedAvatar }) {
+      const [showShareModal, setShowShareModal] = useState(false);
+      const [showChallengeModal, setShowChallengeModal] = useState(false);
+      const [selectedFriend, setSelectedFriend] = useState(null);
+      
+      return (
+        <div className="space-y-4">
+          {/* Share Score Card */}
+          <div className="glass-effect rounded-3xl p-5 card-glow border border-slate-700/50">
+            <h2 className="text-lg font-extrabold text-slate-200 mb-4 flex items-center gap-2">
+              <span>📤</span> Share Your Score
+            </h2>
+            <div className="flex items-center justify-between glass-effect rounded-xl p-4 border border-green-500/30 mb-4">
+              <div className="flex items-center gap-3">
+                <div className="text-4xl">{getAvatarEmoji(selectedAvatar)}</div>
+                <div>
+                  <div className="text-slate-300 font-bold">Your Score</div>
+                  <div className="text-3xl font-extrabold text-green-400">{score}</div>
+                </div>
+              </div>
+              <div className="text-center">
+                <div className="text-slate-400 text-xs">Rank</div>
+                <div className="text-2xl font-extrabold text-yellow-400">#{currentRank}</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              <button 
+                onClick={() => onShare('twitter')}
+                className="glass-effect rounded-xl p-2 text-center border border-slate-600 hover:border-slate-400 transition-all"
+              >
+                <div className="w-8 h-8 mx-auto mb-1 rounded-lg bg-black flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">𝕏</span>
+                </div>
+                <div className="text-[10px] text-slate-300 truncate">Twitter</div>
+              </button>
+              <button 
+                onClick={() => onShare('facebook')}
+                className="glass-effect rounded-xl p-2 text-center border border-blue-600/30 hover:border-blue-600 transition-all"
+              >
+                <div className="w-8 h-8 mx-auto mb-1 rounded-lg bg-blue-600 flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">f</span>
+                </div>
+                <div className="text-[10px] text-slate-300 truncate">Facebook</div>
+              </button>
+              <button 
+                onClick={() => onShare('instagram')}
+                className="glass-effect rounded-xl p-2 text-center border border-pink-500/30 hover:border-pink-500 transition-all"
+              >
+                <div className="w-8 h-8 mx-auto mb-1 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)' }}>
+                  <span className="text-white text-lg">📷</span>
+                </div>
+                <div className="text-[10px] text-slate-300 truncate">Instagram</div>
+              </button>
+              <button 
+                onClick={() => onShare('copy')}
+                className="glass-effect rounded-xl p-2 text-center border border-slate-500/30 hover:border-slate-400 transition-all"
+              >
+                <div className="w-8 h-8 mx-auto mb-1 rounded-lg bg-slate-600 flex items-center justify-center">
+                  <span className="text-white text-lg">📋</span>
+                </div>
+                <div className="text-[10px] text-slate-300 truncate">Copy</div>
+              </button>
+            </div>
+          </div>
+
+          {/* Active Challenges */}
+          <div className="glass-effect rounded-3xl p-5 card-glow border border-slate-700/50">
+            <h2 className="text-lg font-extrabold text-slate-200 mb-4 flex items-center gap-2">
+              <span>⚔️</span> Active Challenges
+            </h2>
+            {challenges.length === 0 ? (
+              <div className="text-center py-4">
+                <div className="text-3xl mb-2">🎯</div>
+                <p className="text-slate-400 text-sm">No active challenges. Challenge a friend below!</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {challenges.map((challenge) => (
+                  <div key={challenge.id} className="glass-effect rounded-xl p-3 border border-orange-500/30">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{challenge.avatar}</span>
+                        <div>
+                          <div className="text-slate-200 font-bold text-sm">{challenge.from}</div>
+                          <div className="text-xs text-slate-400">Beat {challenge.targetScore} pts!</div>
+                        </div>
+                      </div>
+                      {challenge.status === 'pending' ? (
+                        <button 
+                          onClick={() => onAcceptChallenge(challenge.id)}
+                          className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg"
+                        >
+                          Accept
+                        </button>
+                      ) : (
+                        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+                          challenge.status === 'won' ? 'bg-green-500/20 text-green-400' :
+                          challenge.status === 'lost' ? 'bg-red-500/20 text-red-400' :
+                          'bg-blue-500/20 text-blue-400'
+                        }`}>
+                          {challenge.status === 'active' ? 'In Progress' : challenge.status.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Friends List - Challenge */}
+          <div className="glass-effect rounded-3xl p-5 card-glow border border-slate-700/50">
+            <h2 className="text-lg font-extrabold text-slate-200 mb-4 flex items-center gap-2">
+              <span>👥</span> Challenge Friends
+            </h2>
+            <div className="space-y-2">
+              {friends.map((friend) => (
+                <div key={friend.id} className="glass-effect rounded-xl p-3 border border-slate-700/50 hover:border-green-500/30 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{friend.avatar}</span>
+                      <div>
+                        <div className="text-slate-200 font-bold">{friend.name}</div>
+                        <div className="text-xs text-slate-400">Score: {friend.score} • Rank #{friend.rank}</div>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => onChallenge(friend)}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:scale-105 transition-transform"
+                    >
+                      ⚔️ Challenge
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function ImprovedLeaderboard({ currentScore, animatingRanks, userAvatar, currentRank, leaderboardFilter, setLeaderboardFilter, allUsers, friends }) {
+      const [showRankAnimation, setShowRankAnimation] = useState(null);
+      
+      const filteredUsers = leaderboardFilter === 'friends' 
+        ? allUsers.filter(u => u.isFriend || u.isUser)
+        : allUsers;
+      
+      const displayUsers = filteredUsers.slice(0, 10);
+      
+      const getRankBadge = (rank) => {
+        if (rank === 1) return { emoji: '🥇', bg: 'from-yellow-400 to-orange-400', text: 'text-slate-900' };
+        if (rank === 2) return { emoji: '🥈', bg: 'from-slate-300 to-slate-400', text: 'text-slate-900' };
+        if (rank === 3) return { emoji: '🥉', bg: 'from-amber-600 to-amber-700', text: 'text-white' };
+        return { emoji: null, bg: 'from-slate-600 to-slate-700', text: 'text-white' };
+      };
+
+      return (
+        <div className="glass-effect rounded-3xl p-5 card-glow border border-slate-700/50">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-extrabold text-slate-200 flex items-center gap-2">
+              <span>🏅</span> Leaderboard
+            </h2>
+            <div className="flex gap-1">
+              <button 
+                onClick={() => setLeaderboardFilter('all')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  leaderboardFilter === 'all' 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-slate-700 text-slate-400 hover:text-white'
+                }`}
+              >
+                All
+              </button>
+              <button 
+                onClick={() => setLeaderboardFilter('friends')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                  leaderboardFilter === 'friends' 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-slate-700 text-slate-400 hover:text-white'
+                }`}
+              >
+                Friends
+              </button>
+            </div>
+          </div>
+          
+          {/* Your Position Banner */}
+          <div className="glass-effect rounded-xl p-3 mb-4 border-2 border-green-500/50 bg-green-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-extrabold bg-gradient-to-br ${getRankBadge(currentRank).bg} ${getRankBadge(currentRank).text} shadow-lg`}>
+                  {getRankBadge(currentRank).emoji || `#${currentRank}`}
+                </div>
+                <span className="text-3xl">{userAvatar}</span>
+                <div>
+                  <div className="text-green-300 font-bold">You</div>
+                  <div className="text-xs text-slate-400">Keep driving safe to rank up!</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-extrabold text-green-400">{currentScore}</div>
+                <div className="text-xs text-slate-400">points</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Leaderboard List */}
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {displayUsers.map((user) => {
+              const isJumping = animatingRanks.includes(user.rank);
+              const badge = getRankBadge(user.rank);
+              
+              return (
+                <div 
+                  key={user.rank} 
+                  className={`flex items-center justify-between glass-effect rounded-xl p-3 border transition-all ${
+                    user.isUser ? 'border-green-500/50 bg-green-500/10' : 
+                    user.isFriend ? 'border-purple-500/30' : 'border-slate-700/50'
+                  } hover:border-green-500/30 ${
+                    isJumping ? 'animate-jump' : ''
+                  } ${showRankAnimation === user.rank ? 'animate-rankUp' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-extrabold bg-gradient-to-br ${badge.bg} ${badge.text} shadow-lg`}>
+                      {badge.emoji || `#${user.rank}`}
+                    </div>
+                    <span className="text-2xl">{user.avatar}</span>
+                    <div>
+                      <span className={`font-bold ${
+                        user.isUser ? 'text-green-300' : user.isFriend ? 'text-purple-300' : 'text-slate-200'
+                      }`}>
+                        {user.name}
+                        {user.isFriend && !user.isUser && <span className="ml-1 text-xs">👥</span>}
+                      </span>
+                      {user.streak > 0 && (
+                        <div className="text-xs text-orange-400">🔥 {user.streak} day streak</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-green-400 font-extrabold text-lg">{user.score}</span>
+                    {user.change && (
+                      <div className={`text-xs font-bold ${user.change > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {user.change > 0 ? '↑' : '↓'} {Math.abs(user.change)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     function StartDrivingButton({ onStartDriving, isDriving, onStopDriving, tripDuration, setTripDuration }) {
       if (isDriving) {
         return (
@@ -642,12 +1108,28 @@
       );
     }
 
-    function FullGamificationView({ onStartDriving, isDriving, onStopDriving, score, floatingPoints, streak, unlockedBadges, animatingRanks, sessionProgress, hasRecentNudge, tripDuration, setTripDuration, coins, ownedSkins, selectedAvatar, onPurchaseSkin, onSelectAvatar, getAvatarEmoji, currentRank, currentPage, onNavigate }) {
+    function FullGamificationView({ onStartDriving, isDriving, onStopDriving, score, floatingPoints, streak, unlockedBadges, animatingRanks, sessionProgress, hasRecentNudge, tripDuration, setTripDuration, coins, ownedSkins, selectedAvatar, onPurchaseSkin, onSelectAvatar, getAvatarEmoji, currentRank, currentPage, onNavigate, tripHistory, totalStats, friends, challenges, onChallenge, onAcceptChallenge, onShare, leaderboardFilter, setLeaderboardFilter, allUsers, theme, setTheme }) {
       return (
-        <div className="h-full bg-slate-900 flex flex-col overflow-y-auto">
-          <Header currentPage={currentPage} onNavigate={onNavigate} coins={coins} />
+        <div className={`h-full bg-slate-900 flex flex-col overflow-y-auto ${theme === 'light' ? 'light-theme' : ''}`}>
+          <Header currentPage={currentPage} onNavigate={onNavigate} coins={coins} theme={theme} setTheme={setTheme} />
           <div className="flex-1 px-6 py-4 space-y-6">
-            {currentPage === 'shop' ? (
+            {currentPage === 'history' ? (
+              // History Page
+              <TripHistoryPage tripHistory={tripHistory} totalStats={totalStats} />
+            ) : currentPage === 'social' ? (
+              // Social Page
+              <SocialPage 
+                score={score}
+                currentRank={currentRank}
+                onShare={onShare}
+                friends={friends}
+                onChallenge={onChallenge}
+                challenges={challenges}
+                onAcceptChallenge={onAcceptChallenge}
+                getAvatarEmoji={getAvatarEmoji}
+                selectedAvatar={selectedAvatar}
+              />
+            ) : currentPage === 'shop' ? (
               // Shop Page
               <>
                 <div className="text-center py-6">
@@ -704,7 +1186,16 @@
                 <SafetyScoreCard score={score} isDriving={isDriving} floatingPoints={floatingPoints} />
                 <StatsRow streak={streak} isDriving={isDriving} />
                 <GamificationSection unlockedBadges={unlockedBadges} />
-                <LeaderboardPreview currentScore={score} animatingRanks={animatingRanks} userAvatar={getAvatarEmoji(selectedAvatar)} currentRank={currentRank} />
+                <ImprovedLeaderboard 
+                  currentScore={score} 
+                  animatingRanks={animatingRanks} 
+                  userAvatar={getAvatarEmoji(selectedAvatar)} 
+                  currentRank={currentRank}
+                  leaderboardFilter={leaderboardFilter}
+                  setLeaderboardFilter={setLeaderboardFilter}
+                  allUsers={allUsers}
+                  friends={friends}
+                />
                 <StartDrivingButton 
                   onStartDriving={onStartDriving} 
                   isDriving={isDriving}
@@ -733,6 +1224,8 @@
 
     function App() {
       const [viewMode, setViewMode] = useState('full');
+      const [alertMode, setAlertMode] = useState('vibration'); // 'vibration' or 'sound'
+      const [theme, setTheme] = useState('dark'); // 'dark' or 'light'
       const [showAlert, setShowAlert] = useState(false);
       const [isDriving, setIsDriving] = useState(false);
       const [phoneShake, setPhoneShake] = useState(false);
@@ -761,8 +1254,41 @@
         nudgeActivations: 0,
         forbiddenAppTime: 0
       });
+      const [leaderboardFilter, setLeaderboardFilter] = useState('all');
+      const [tripHistory, setTripHistory] = useState([]);
+      const [totalStats, setTotalStats] = useState({
+        totalTrips: 0,
+        totalDuration: 0,
+        bestScore: 0,
+        totalCoins: 0
+      });
+      const [friends, setFriends] = useState([
+        { id: 1, name: 'Alex M.', avatar: '😎', score: 98, rank: 1 },
+        { id: 2, name: 'Sarah K.', avatar: '🌟', score: 96, rank: 2 },
+        { id: 3, name: 'Mike T.', avatar: '🚀', score: 95, rank: 3 },
+        { id: 4, name: 'Emma L.', avatar: '💫', score: 89, rank: 6 },
+        { id: 5, name: 'Jake R.', avatar: '🎮', score: 85, rank: 8 }
+      ]);
+      const [challenges, setChallenges] = useState([
+        { id: 1, from: 'Alex M.', avatar: '😎', targetScore: 95, status: 'pending' }
+      ]);
+      const [allUsers, setAllUsers] = useState([
+        { rank: 1, name: 'Alex M.', score: 98, avatar: '😎', isFriend: true, streak: 7, change: 2 },
+        { rank: 2, name: 'Sarah K.', score: 96, avatar: '🌟', isFriend: true, streak: 5, change: 0 },
+        { rank: 3, name: 'Mike T.', score: 95, avatar: '🚀', isFriend: true, streak: 3, change: -1 },
+        { rank: 4, name: 'Chris P.', score: 94, avatar: '🎯', isFriend: false, streak: 2, change: 1 },
+        { rank: 5, name: 'You', score: 92, avatar: '👤', isUser: true, streak: 0, change: 0 },
+        { rank: 6, name: 'Emma L.', score: 89, avatar: '💫', isFriend: true, streak: 1, change: -2 },
+        { rank: 7, name: 'David K.', score: 87, avatar: '🔥', isFriend: false, streak: 0, change: 0 },
+        { rank: 8, name: 'Jake R.', score: 85, avatar: '🎮', isFriend: true, streak: 0, change: 3 },
+        { rank: 9, name: 'Lisa M.', score: 82, avatar: '✨', isFriend: false, streak: 0, change: -1 },
+        { rank: 10, name: 'Tom H.', score: 80, avatar: '🌈', isFriend: false, streak: 0, change: 0 }
+      ]);
+      const [showShareToast, setShowShareToast] = useState(false);
+      const [shareMessage, setShareMessage] = useState('');
 
       const pointsIdRef = useRef(0);
+      const tripIdRef = useRef(0);
 
       // Live score counter while driving in safe mode
       useEffect(() => {
@@ -851,7 +1377,18 @@
       }, [isDriving, startTime]);
 
       const triggerVibration = () => {
-        playBuzzSound();
+        // Use selected alert mode
+        if (alertMode === 'sound') {
+          // Voice alert - speak warning message
+          speakAlert(getRandomAlertMessage());
+        } else {
+          // Vibration mode - play buzz sound
+          playBuzzSound();
+          // Try to trigger device vibration if supported
+          if (navigator.vibrate) {
+            navigator.vibrate([200, 100, 200, 100, 200]);
+          }
+        }
 
         // Trigger phone shake
         setPhoneShake(true);
@@ -916,6 +1453,86 @@
           nudgeActivations: sessionData.nudgeActivations,
           forbiddenAppTime: sessionData.forbiddenAppTime
         });
+        
+        // Calculate coins earned this trip
+        const coinsEarned = Math.max(0, Math.floor(tripDurationSeconds / 3) * 2 - sessionData.nudgeActivations * 5);
+        
+        // Save trip to history
+        const newTrip = {
+          id: tripIdRef.current++,
+          timestamp: Date.now(),
+          duration: tripDurationSeconds,
+          score: score,
+          nudges: sessionData.nudgeActivations,
+          coinsEarned: coinsEarned
+        };
+        
+        setTripHistory(prev => [...prev, newTrip]);
+        
+        // Update total stats
+        setTotalStats(prev => ({
+          totalTrips: prev.totalTrips + 1,
+          totalDuration: prev.totalDuration + tripDurationSeconds,
+          bestScore: Math.max(prev.bestScore, score),
+          totalCoins: prev.totalCoins + coinsEarned
+        }));
+        
+        // Update user position in leaderboard based on score
+        setAllUsers(prev => {
+          const updated = prev.map(u => 
+            u.isUser ? { ...u, score: score, avatar: getAvatarEmoji(selectedAvatar) } : u
+          );
+          return updated.sort((a, b) => b.score - a.score).map((u, i) => ({ ...u, rank: i + 1 }));
+        });
+      };
+      
+      const handleShare = (platform) => {
+        const shareText = `🚗 I scored ${score} points on DriveSafe! I'm ranked #${currentRank}. Can you beat my score? #DriveSafe #SafeDriving`;
+        const shareUrl = 'https://drivesafe.app'; // Placeholder URL
+        
+        if (platform === 'twitter') {
+          window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
+        } else if (platform === 'facebook') {
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`, '_blank');
+        } else if (platform === 'instagram') {
+          // Instagram doesn't have a direct share URL API, so we copy and open Instagram
+          navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+          setShareMessage('Caption copied! Opening Instagram...');
+          setShowShareToast(true);
+          setTimeout(() => setShowShareToast(false), 3000);
+          // Open Instagram (will open app on mobile or website on desktop)
+          window.open('https://www.instagram.com/', '_blank');
+        } else if (platform === 'copy') {
+          navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+          setShareMessage('Link copied to clipboard!');
+          setShowShareToast(true);
+          setTimeout(() => setShowShareToast(false), 3000);
+        }
+        playDingSound();
+      };
+      
+      const handleChallenge = (friend) => {
+        const newChallenge = {
+          id: Date.now(),
+          to: friend.name,
+          toAvatar: friend.avatar,
+          targetScore: score,
+          status: 'sent',
+          from: 'You',
+          avatar: getAvatarEmoji(selectedAvatar)
+        };
+        setChallenges(prev => [...prev, newChallenge]);
+        setShareMessage(`Challenge sent to ${friend.name}!`);
+        setShowShareToast(true);
+        setTimeout(() => setShowShareToast(false), 3000);
+        playDingSound();
+      };
+      
+      const handleAcceptChallenge = (challengeId) => {
+        setChallenges(prev => 
+          prev.map(c => c.id === challengeId ? { ...c, status: 'active' } : c)
+        );
+        playDingSound();
       };
       
       const handlePurchaseSkin = (skinId, price) => {
@@ -979,6 +1596,18 @@
               currentRank={currentRank}
               currentPage={currentPage}
               onNavigate={setCurrentPage}
+              tripHistory={tripHistory}
+              totalStats={totalStats}
+              friends={friends}
+              challenges={challenges}
+              onChallenge={handleChallenge}
+              onAcceptChallenge={handleAcceptChallenge}
+              onShare={handleShare}
+              leaderboardFilter={leaderboardFilter}
+              setLeaderboardFilter={setLeaderboardFilter}
+              allUsers={allUsers}
+              theme={theme}
+              setTheme={setTheme}
             />;
           default:
             return <FullGamificationView 
@@ -1003,13 +1632,25 @@
               currentRank={currentRank}
               currentPage={currentPage}
               onNavigate={setCurrentPage}
+              tripHistory={tripHistory}
+              totalStats={totalStats}
+              friends={friends}
+              challenges={challenges}
+              onChallenge={handleChallenge}
+              onAcceptChallenge={handleAcceptChallenge}
+              onShare={handleShare}
+              leaderboardFilter={leaderboardFilter}
+              setLeaderboardFilter={setLeaderboardFilter}
+              allUsers={allUsers}
+              theme={theme}
+              setTheme={setTheme}
             />;
         }
       };
 
       return (
-        <div className="min-h-screen gradient-bg flex flex-col items-center py-8 px-4">
-          <ControlToggle viewMode={viewMode} setViewMode={setViewMode} />
+        <div className={`min-h-screen gradient-bg flex flex-col items-center py-8 px-4 ${theme === 'light' ? 'light-theme' : ''}`}>
+          <ControlToggle viewMode={viewMode} setViewMode={setViewMode} alertMode={alertMode} setAlertMode={setAlertMode} />
           
           <div className="mt-8">
             <PhoneFrame 
@@ -1022,6 +1663,18 @@
           </div>
 
           {showAlert && <AlertOverlay />}
+          
+          {/* Share/Challenge Toast */}
+          {showShareToast && (
+            <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-slideUp">
+              <div className="glass-effect rounded-xl px-6 py-3 border border-green-500/50 shadow-lg" style={{ boxShadow: '0 0 30px rgba(34, 197, 94, 0.3)' }}>
+                <div className="flex items-center gap-2 text-green-400 font-bold">
+                  <span>✓</span>
+                  <span>{shareMessage}</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 w-full max-w-sm">
             <div className="glass-effect rounded-2xl p-5 text-slate-300 card-glow border border-slate-700/50">
